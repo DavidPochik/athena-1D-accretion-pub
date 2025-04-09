@@ -1,0 +1,45 @@
+#!/bin/bash
+#SBATCH --account=PAS2229
+#SBATCH --time=2:30:00
+#SBATCH --job-name=athRUN1D
+#SBATCH --nodes=4
+#SBATCH --ntasks=128
+#SBATCH --mail-type=ALL
+#SBATCH --export=ALL
+#SBATCH --open-mode=append
+
+module load intel/18.0.3
+module load intelmpi/2019.7
+module load hdf5
+module load miniconda3
+unset I_MPI_PMI_LIBRARY
+set -x
+cd $SLURM_SUBMIT_DIR
+
+conda create -n hdf5 python=3.9.7 hdf5=1.10.6 h5py=3.6.0
+conda create -n conda_env
+source activate conda_env
+conda activate hdf5
+conda install mpi4py
+conda install numpy
+conda install hdf5
+conda install matplotlib
+conda install scipy
+conda install -c conda-forge moviepy
+
+pgen=accretion_main                            # athena pgen
+pythondir=vis/python                           # python directory
+eosdir=heos_DIR/helm_table.dat                 # eos directory
+athinputfile=athinput.accretion_parallel_main  # athinput file
+dataDIR=accretion_DIR
+eos=helmholtz_gamma_etot
+mkdir ${dataDIR}
+
+python configure.py --prob ${pgen} --eos general/${eos} --coord spherical_polar --nscalars 2 -h5double -mpi -hdf5 --hdf5_path=${HDF5_HOME}
+make clean
+make
+
+mpiexec -n 128 bin/athena -i ${athinputfile} hydro/eos_file_name=${eosdir}
+mv accretion.* ${dataDIR}
+
+python accretion_12panel.py ${dataDIR} ${pythondir} ${eosdir}

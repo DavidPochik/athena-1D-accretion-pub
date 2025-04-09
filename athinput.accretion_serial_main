@@ -136,7 +136,7 @@ eps_nubar = 18.9234 # MeV, borrowed from Fernandez 2012
 eps_nu    = 12.6156 # MeV, borrowed from Fernandez 2012
 
 # IC data file
-file        = Mach_2.0_RPNS_30_MPNS_1.4_Enue_12.6156_Enueb_18.9234_Tau_0.666666_Mdot_0.7_Lnu_40_IC.txt
+file        = IC_files_DIR/Mach_2.0_RPNS_30_MPNS_1.4_Enue_12.6156_Enueb_18.9234_Tau_0.666666_Mdot_0.7_Lnu_40_IC.txt
 rows        = 256
 cols        = 4 # I ran this with 6 on the first run, so Im not sure how badly that messes things up
 col_rho     = 0

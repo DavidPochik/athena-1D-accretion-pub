@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account=[INSERT ACCOUNT HERE]
+#SBATCH --account=PAS2229
 #SBATCH --time=2:30:00
 #SBATCH --job-name=athRUN1D
 #SBATCH --nodes=4
@@ -27,14 +27,15 @@ conda install matplotlib
 conda install scipy
 conda install -c conda-forge moviepy
 
-pgen=accretion_1D                         # athena pgen
-pythondir=vis/python                      # python directory
-eosdir=heos_DIR/helm_table.dat            # eos directory
-athinputfile=athinput.accretion_parallel  # athinput file
+pgen=accretion_thermal                            # athena pgen
+pythondir=vis/python                              # python directory
+eosdir=heos_DIR/helm_table.dat                    # eos directory
+athinputfile=athinput.accretion_parallel_thermal  # athinput file
 dataDIR=accretion_DIR
+eos=helmholtz_gamma_etot
 mkdir ${dataDIR}
 
-python configure.py --prob ${pgen} --eos general/helmholtz_gamma_etot --coord spherical_polar --nscalars 2 -h5double -mpi -hdf5 --hdf5_path=${HDF5_HOME}
+python configure.py --prob ${pgen} --eos general/${eos} --coord spherical_polar --nscalars 3 -h5double -mpi -hdf5 --hdf5_path=${HDF5_HOME}
 make clean
 make
 

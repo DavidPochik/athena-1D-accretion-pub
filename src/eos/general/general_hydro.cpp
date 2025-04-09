@@ -36,7 +36,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   ptable{pmb->pmy_mesh->peos_table},
   pmy_block_{pmb},
   gamma_{pin->GetOrAddReal("hydro", "gamma", 2.)},
-  density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))},
+  density_floor_{pin->GetOrAddReal("hydro", "dfloor", std::sqrt(1024*float_min))}, 
   scalar_floor_{pin->GetOrAddReal("hydro", "sfloor", std::sqrt(1024*float_min))},
   rho_unit_{pin->GetOrAddReal("hydro", "eos_rho_unit", 1.0)},
   inv_rho_unit_{1.0/rho_unit_},
@@ -44,7 +44,7 @@ EquationOfState::EquationOfState(MeshBlock *pmb, ParameterInput *pin) :
   inv_egas_unit_{1.0/egas_unit_},
   vsqr_unit_{egas_unit_/rho_unit_},
   inv_vsqr_unit_{1.0/vsqr_unit_}
-  {
+  { 
   if (pin->DoesParameterExist("hydro", "efloor")) {
     energy_floor_ = pin->GetReal("hydro", "efloor");
     pressure_floor_ = energy_floor_*(pin->GetOrAddReal("hydro", "gamma", 2.) - 1.);
@@ -118,7 +118,8 @@ void EquationOfState::ConservedToPrimitive(
         }
 
         // apply pressure/energy floor, correct total energy
-        u_e = (u_e - ke > energy_floor_) ?  u_e : energy_floor_ + ke;
+        Real efloor = std::max(energy_floor_, GetEgasFloor(u_d, s_cell));
+        u_e = (u_e - ke > efloor) ?  u_e : efloor + ke;
         // MSBC: if ke >> energy_floor_ then u_e - ke may still be zero at this point due
         //       to floating point errors/catastrophic cancellation
         w_p = PresFromRhoEg(u_d, u_e - ke, s_cell);
@@ -229,7 +230,13 @@ void EquationOfState::ApplyPrimitiveFloors(AthenaArray<Real> &prim, AthenaArray<
   // apply density floor
   w_d = (w_d > density_floor_) ?  w_d : density_floor_;
   // apply pressure floor
-  w_p = (w_p > pressure_floor_) ?  w_p : pressure_floor_;
+  Real r_cell[NSCALARS];
+  for (int n=0; n<NSCALARS; ++n) {
+     r_cell[n] = r(n,i);
+
+  }
+  Real pfloor = std::max(pressure_floor_, GetPresFloor(w_d,r_cell));
+  w_p = (w_p > pfloor) ?  w_p : pfloor;
   for (int n=0; n<NSCALARS; ++n) {
     Real& r_n  = r(n,i);
     r_n = (r_n > scalar_floor_) ?  r_n : scalar_floor_;
@@ -263,8 +270,18 @@ void EquationOfState::ApplyPrimitiveConservedFloors(
 
   Real e_k = 0.5*w_d*(SQR(prim(IVX,k,j,i)) + SQR(prim(IVY,k,j,i)) + SQR(prim(IVZ,k,j,i)));
   // apply pressure floor, correct total energy
-  u_e = (w_p > energy_floor_) ? u_e : energy_floor_ + e_k;
-  w_p = (w_p > pressure_floor_) ? w_p : pressure_floor_;
+  Real s_cell[NSCALARS];
+  for (int n=0; n<NSCALARS; ++n) {
+     s_cell[n] = s(n,k,j,i);
+  }
+  Real r_cell[NSCALARS];
+  for (int n=0; n<NSCALARS; ++n) {
+     r_cell[n] = r(n,k,j,i);
+  }
+  Real efloor = std::max(energy_floor_, GetEgasFloor(u_d,s_cell));
+  Real pfloor = std::max(pressure_floor_, GetPresFloor(w_d,r_cell));
+  u_e = std::max(u_e, efloor + e_k); //(w_p > energy_floor_) ? u_e : energy_floor_ + e_k;
+  w_p = (w_p > pfloor) ? w_p : pfloor;
   if (NSCALARS) {
     Real di = 1.0/w_d;
     for (int n=0; n<NSCALARS; ++n) {
