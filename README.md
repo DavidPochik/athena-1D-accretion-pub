@@ -8,7 +8,7 @@
   5) ```enue=12.6156``` (in units of MeV)
   6) ```enueb=18.9234``` (in units of MeV) 
   7) ```Tau=2/3```
-  8) Boundary conditions described in Pochik and Thompson 2025 (in progress)
+  8) Boundary conditions described in Pochik and Thompson 2025 (https://arxiv.org/abs/2411.16857)
  - Variables in the ```athinput``` files already include the default boundary values and conditions listed above.
  - The ```accretion_12panel.py``` plot script produces a plot of the accretion model at the final timestep.
  - To see native the Athena++ code and documentation, visit https://github.com/PrincetonUniversity/athena
